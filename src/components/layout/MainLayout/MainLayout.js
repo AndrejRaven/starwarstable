@@ -1,12 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Container } from '@mui/material/';
 
 const MainLayout = ({ children }) => {
-  return (
-    <>
-      <main>{children}</main>
-    </>
-  );
+  return <Container maxWidth="xl">{children}</Container>;
 };
 
 MainLayout.propTypes = {
