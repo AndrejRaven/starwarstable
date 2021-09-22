@@ -4,7 +4,6 @@ import { Grid, Typography } from '@mui/material/';
 
 class PeopleTable extends React.Component {
   componentDidMount() {
-    console.log(this.props);
     const { fetchPeople } = this.props;
 
     fetchPeople();

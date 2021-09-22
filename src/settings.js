@@ -1,5 +1,5 @@
 const api = {
-  url: 'https://swapi.dev/api/',
+  url: 'https://swapi.dev/api',
   people: 'people/',
   planets: 'planets',
   spaceships: 'spaceships',

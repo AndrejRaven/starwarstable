@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import Axios from 'axios';
 import api from '../settings';
 
@@ -33,11 +34,25 @@ export const fetchPeopleFromAPI = () => {
     if (getState().people.data.length === 0) {
       dispatch(fetchPeopleStarted());
 
-      console.log(`${api.url}/${api.people}`);
       Axios.get(`${api.url}/${api.people}`)
-        .then((res) => {
-          console.log(res);
-          dispatch(fetchPeopleSuccess(res.data));
+        .then(() => {
+          (async () => {
+            let nextPage = `${api.url}/${api.people}`;
+
+            let people = [];
+
+            while (nextPage) {
+              const result = await Axios.get(nextPage);
+
+              const { next, results } = await result.data;
+
+              nextPage = next;
+
+              people = [...people, ...results];
+            }
+
+            dispatch(fetchPeopleSuccess(people));
+          })();
         })
         .catch((err) => {
           dispatch(fetchPeopleError(err.message || true));
