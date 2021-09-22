@@ -1,27 +1,29 @@
 import { combineReducers, createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
 import { composeWithDevTools } from 'redux-devtools-extension';
+import peopleReducer from './peopleReducer';
 
 // define initial state and shallow-merge initial data
 const initialState = {
-  currencies: {
+  people: {
     loading: {
       active: false,
       error: false
     },
     data: []
   },
-  authError: null,
   filters: {
     searchPhrase: '',
-    homeworld: [],
-    species: [],
-    status: []
+    homeworld: '',
+    species: '',
+    status: ''
   }
 };
 
 // define reducers
-const reducers = {};
+const reducers = {
+  people: peopleReducer
+};
 
 // add blank reducers for initial state properties without reducers
 Object.keys(initialState).forEach((item) => {

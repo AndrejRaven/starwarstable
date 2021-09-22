@@ -4,7 +4,7 @@ import { BrowserRouter, Switch, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import MainLayout from './components/layout/MainLayout/MainLayout';
 import store from './redux/store';
-import HeroTable from './components/views/HeroTable/HeroTable';
+import PeopleTableContainer from './components/views/PeopleTable/PeopleTableContainer';
 
 export default function App() {
   return (
@@ -12,7 +12,7 @@ export default function App() {
       <BrowserRouter basename="/">
         <MainLayout>
           <Switch>
-            <Route exact path="/" component={HeroTable} />
+            <Route exact path="/" component={PeopleTableContainer} />
           </Switch>
         </MainLayout>
       </BrowserRouter>
