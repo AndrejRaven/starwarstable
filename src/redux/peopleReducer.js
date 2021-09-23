@@ -50,7 +50,6 @@ export const fetchPeopleFromAPI = () => {
 
               people = [...people, ...results];
             }
-
             dispatch(fetchPeopleSuccess(people));
           })();
         })

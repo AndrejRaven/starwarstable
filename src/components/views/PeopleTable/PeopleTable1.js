@@ -7,7 +7,6 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Toolbar from '@mui/material/Toolbar';
@@ -20,10 +19,19 @@ import InputBase from '@mui/material/InputBase';
 import { visuallyHidden } from '@mui/utils';
 import SearchIcon from '@mui/icons-material/Search';
 import Pagination from '@mui/material/Pagination';
+import IconButton from '@mui/material/IconButton';
+import EditIcon from '@mui/icons-material/Edit';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DoneIcon from '@mui/icons-material/Done';
+import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import Axios from 'axios';
+import api from '../../../settings';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius,
+  border: '1px solid black',
   backgroundColor: alpha(theme.palette.common.white, 0.75),
   '&:hover': {
     backgroundColor: alpha(theme.palette.common.white, 0.25)
@@ -62,40 +70,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     }
   }
 }));
-
-function createData(
-  name,
-  born,
-  homeworld,
-  vehiclesAndStarships,
-  status,
-  actions
-) {
-  return {
-    name,
-    born,
-    homeworld,
-    vehiclesAndStarships,
-    status,
-    actions
-  };
-}
-
-const rows = [
-  createData('Cupcake', 305, 3.7, 67, 4.3, 22),
-  createData('Donut', 452, 25.0, 51, 4.9, 11),
-  createData('Eclair', 262, 16.0, 24, 6.0, 11),
-  createData('Frozen yoghurt', 159, 6.0, 24, 4.0, 11),
-  createData('Gingerbread', 356, 16.0, 49, 3.9, 11),
-  createData('Honeycomb', 408, 3.2, 87, 6.5, 11),
-  createData('Ice cream sandwich', 237, 9.0, 37, 4.3, 11),
-  createData('Jelly Bean', 375, 0.0, 94, 0.0, 11),
-  createData('KitKat', 518, 26.0, 65, 7.0, 11),
-  createData('Lollipop', 392, 0.2, 98, 0.0, 11),
-  createData('Marshmallow', 318, 0, 81, 2.0, 11),
-  createData('Nougat', 360, 19.0, 9, 37.0, 11),
-  createData('Oreo', 437, 18.0, 63, 4.0, 11)
-];
 
 const currencies = [
   {
@@ -155,31 +129,31 @@ const headCells = [
   },
   {
     id: 'born',
-    numeric: true,
+    numeric: false,
     disablePadding: false,
     label: 'Born'
   },
   {
     id: 'homeworld',
-    numeric: true,
+    numeric: false,
     disablePadding: false,
     label: 'Homeworld'
   },
   {
     id: 'vehiclesAndStarships',
-    numeric: true,
+    numeric: false,
     disablePadding: false,
     label: 'Vehicles and Starships'
   },
   {
     id: 'status',
-    numeric: true,
+    numeric: false,
     disablePadding: false,
     label: 'Status'
   },
   {
     id: 'actions',
-    numeric: true,
+    numeric: false,
     disablePadding: false,
     label: 'Actions'
   }
@@ -194,6 +168,7 @@ function EnhancedTableHead(props) {
     rowCount,
     onRequestSort
   } = props;
+
   const createSortHandler = (property) => (event) => {
     onRequestSort(event, property);
   };
@@ -249,10 +224,10 @@ EnhancedTableHead.propTypes = {
 
 const EnhancedTableToolbar = (props) => {
   const { numSelected } = props;
-  const [currency, setCurrency] = React.useState('');
+  const [species, setSpecies] = React.useState('Species');
 
   const handleChange = (event) => {
-    setCurrency(event.target.value);
+    setSpecies(event.target.value);
   };
 
   return (
@@ -269,14 +244,6 @@ const EnhancedTableToolbar = (props) => {
         })
       }}
     >
-      <Typography
-        sx={{ flex: '1 1 100%' }}
-        variant="h6"
-        id="tableTitle"
-        component="div"
-      >
-        Charakters
-      </Typography>
       <Search>
         <SearchIconWrapper>
           <SearchIcon />
@@ -289,7 +256,7 @@ const EnhancedTableToolbar = (props) => {
       <TextField
         id="outlined-select-species"
         select
-        value="Species"
+        value={species}
         onChange={handleChange}
       >
         {currencies.map((option) => (
@@ -301,7 +268,7 @@ const EnhancedTableToolbar = (props) => {
       <TextField
         id="outlined-select-homeworld"
         select
-        value={currency}
+        value={species}
         onChange={handleChange}
       >
         {currencies.map((option) => (
@@ -313,7 +280,7 @@ const EnhancedTableToolbar = (props) => {
       <TextField
         id="outlined-select-status"
         select
-        value={currency}
+        value={species}
         onChange={handleChange}
       >
         {currencies.map((option) => (
@@ -322,6 +289,10 @@ const EnhancedTableToolbar = (props) => {
           </MenuItem>
         ))}
       </TextField>
+      <Grid container>
+        <Button>button</Button>
+        <Button>button</Button>
+      </Grid>
     </Toolbar>
   );
 };
@@ -334,8 +305,34 @@ const EnhancedTable = () => {
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('born');
   const [selected, setSelected] = React.useState([]);
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const [page, setPage] = React.useState(1);
+  const [status] = React.useState('active');
+  const [rowsPerPage] = React.useState(5);
+  const [characters, setCharacters] = React.useState([]);
+  React.useEffect(() => {
+    if (characters.length === 0) {
+      Axios.get(`${api.url}/${api.people}`).then(() => {
+        (async () => {
+          let nextPage = `${api.url}/${api.people}`;
+
+          let people = [];
+
+          while (nextPage) {
+            // eslint-disable-next-line no-await-in-loop
+            const result = await Axios.get(nextPage);
+
+            // eslint-disable-next-line no-await-in-loop
+            const { next, results } = await result.data;
+
+            nextPage = next;
+
+            people = [...people, ...results];
+          }
+          setCharacters(people);
+        })();
+      });
+    }
+  });
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -345,7 +342,7 @@ const EnhancedTable = () => {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = rows.map((n) => n.name);
+      const newSelecteds = characters.map((n) => n.name);
       setSelected(newSelecteds);
       return;
     }
@@ -373,24 +370,20 @@ const EnhancedTable = () => {
   };
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(newPage - 1);
   };
 
   const isSelected = (name) => selected.indexOf(name) !== -1;
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - characters.length) : 0;
 
   return (
     <Box sx={{ width: '100%' }}>
+      <Typography variant="h5">Characters</Typography>
+      <EnhancedTableToolbar />
       <Paper sx={{ width: '100%', mb: 2 }}>
-        <EnhancedTableToolbar numSelected={selected.length} />
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
@@ -403,25 +396,25 @@ const EnhancedTable = () => {
               orderBy={orderBy}
               onSelectAllClick={handleSelectAllClick}
               onRequestSort={handleRequestSort}
-              rowCount={rows.length}
+              rowCount={characters.length}
             />
             <TableBody>
               {/* if you don't need to support IE11, you can replace the `stableSort` call with:
                  rows.slice().sort(getComparator(order, orderBy)) */}
-              {stableSort(rows, getComparator(order, orderBy))
+              {stableSort(characters, getComparator(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => {
-                  const isItemSelected = isSelected(row.name);
+                .map((charakter, index) => {
+                  const isItemSelected = isSelected(charakter.name);
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
                     <TableRow
                       hover
-                      onClick={(event) => handleClick(event, row.name)}
+                      onClick={(event) => handleClick(event, charakter.name)}
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
-                      key={row.name}
+                      key={charakter.name}
                       selected={isItemSelected}
                     >
                       <TableCell padding="checkbox">
@@ -439,15 +432,32 @@ const EnhancedTable = () => {
                         scope="row"
                         padding="none"
                       >
-                        {row.name}
+                        {charakter.name}
                       </TableCell>
-                      <TableCell align="right">{row.born}</TableCell>
-                      <TableCell align="right">{row.homeworld}</TableCell>
                       <TableCell align="right">
-                        {row.vehiclesAndStarships}
+                        {charakter.birth_year}
                       </TableCell>
-                      <TableCell align="right">{row.status}</TableCell>
-                      <TableCell align="right">{row.actions}</TableCell>
+                      <TableCell align="right">{charakter.homeworld}</TableCell>
+                      <TableCell align="right">{charakter.vehicles}</TableCell>
+                      <TableCell align="left">
+                        <DoneIcon fontSize="small" /> {status}
+                      </TableCell>
+                      <TableCell align="left">
+                        <IconButton
+                          color="primary"
+                          aria-label="upload picture"
+                          component="span"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          color="primary"
+                          aria-label="upload picture"
+                          component="span"
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -463,23 +473,17 @@ const EnhancedTable = () => {
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+      </Paper>
+      <Grid container justify="flex-start" direction="row-reverse">
         <Pagination
           component="div"
-          count={rows.length}
-          page={page}
-          onPageChange={handleChangePage}
+          count={Math.ceil(characters.length / rowsPerPage)}
+          page={page + 1}
+          onChange={handleChangePage}
           variant="outlined"
           shape="rounded"
         />
-      </Paper>
+      </Grid>
     </Box>
   );
 };
