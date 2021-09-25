@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 import * as React from 'react';
 import PropTypes from 'prop-types';
 import { styled, alpha } from '@mui/material/styles';
@@ -18,6 +20,7 @@ import MenuItem from '@mui/material/MenuItem';
 import InputBase from '@mui/material/InputBase';
 import { visuallyHidden } from '@mui/utils';
 import SearchIcon from '@mui/icons-material/Search';
+import RemoveIcon from '@mui/icons-material/Remove';
 import Pagination from '@mui/material/Pagination';
 import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
@@ -39,7 +42,6 @@ const Search = styled('div')(({ theme }) => ({
   marginLeft: 0,
   width: '100%',
   [theme.breakpoints.up('sm')]: {
-    marginLeft: theme.spacing(1),
     width: 'auto'
   }
 }));
@@ -70,25 +72,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     }
   }
 }));
-
-const currencies = [
-  {
-    value: 'USD',
-    label: '$'
-  },
-  {
-    value: 'EUR',
-    label: '€'
-  },
-  {
-    value: 'BTC',
-    label: '฿'
-  },
-  {
-    value: 'JPY',
-    label: '¥'
-  }
-];
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -190,7 +173,7 @@ function EnhancedTableHead(props) {
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
-            align={headCell.numeric ? 'right' : 'left'}
+            align={headCell.disablePadding ? 'left' : 'right'}
             padding={headCell.disablePadding ? 'none' : 'normal'}
             sortDirection={orderBy === headCell.id ? order : false}
           >
@@ -222,26 +205,75 @@ EnhancedTableHead.propTypes = {
   rowCount: PropTypes.number.isRequired
 };
 
-const EnhancedTableToolbar = (props) => {
-  const { numSelected } = props;
-  const [species, setSpecies] = React.useState('Species');
+const EnhancedTableToolbar = () => {
+  const [speciesArray, setSpeciesArray] = React.useState([]);
+  const [species, setSpecies] = React.useState('');
+  const [homeworldArray, setHomeworldArray] = React.useState([]);
+  const [homeworld, setHomeworld] = React.useState('');
+  const [status, setStatus] = React.useState('');
+  React.useEffect(() => {
+    if (speciesArray.length === 0) {
+      (async () => {
+        let nextPage = `${api.url}/${api.species}`;
 
-  const handleChange = (event) => {
+        let speciesList = [];
+
+        while (nextPage) {
+          const result = await Axios.get(nextPage);
+
+          const { next, results } = await result.data;
+          nextPage = next;
+
+          speciesList = [...speciesList, ...results.map((res) => res.name)];
+        }
+        setSpeciesArray(speciesList);
+      })();
+    }
+  });
+  React.useEffect(() => {
+    if (homeworldArray.length === 0) {
+      (async () => {
+        let nextPage = `${api.url}/${api.planets}`;
+
+        let homeworldList = [];
+
+        while (nextPage) {
+          const result = await Axios.get(nextPage);
+
+          const { next, results } = await result.data;
+          nextPage = next;
+
+          homeworldList = [...homeworldList, ...results.map((res) => res.name)];
+        }
+        setHomeworldArray(homeworldList);
+      })();
+    }
+  });
+  const statusMenu = ['active', 'desactive'];
+
+  const handleSpecies = (event) => {
     setSpecies(event.target.value);
+  };
+  const handleHomeworld = (event) => {
+    setHomeworld(event.target.value);
+  };
+  const handleStatus = (event) => {
+    setStatus(event.target.value);
   };
 
   return (
     <Toolbar
       sx={{
-        pl: { sm: 2 },
+        mt: '2vh',
+        pl: { sm: 0 },
         pr: { xs: 1, sm: 1 },
-        ...(numSelected > 0 && {
-          bgcolor: (theme) =>
-            alpha(
-              theme.palette.primary.main,
-              theme.palette.action.activatedOpacity
-            )
-        })
+        '& .MuiTextField-root': {
+          m: 1,
+          width: '25ch',
+          '& .MuiSelect-select': {
+            padding: '9px'
+          }
+        }
       }}
     >
       <Search>
@@ -255,50 +287,65 @@ const EnhancedTableToolbar = (props) => {
       </Search>
       <TextField
         id="outlined-select-species"
+        label="Species"
         select
         value={species}
-        onChange={handleChange}
+        onChange={handleSpecies}
       >
-        {currencies.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            {option.label}
+        {speciesArray.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
           </MenuItem>
         ))}
       </TextField>
       <TextField
         id="outlined-select-homeworld"
+        label="Homeworld"
         select
-        value={species}
-        onChange={handleChange}
+        value={homeworld}
+        onChange={handleHomeworld}
       >
-        {currencies.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            {option.label}
+        {homeworldArray.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
           </MenuItem>
         ))}
       </TextField>
       <TextField
-        id="outlined-select-status"
+        id="outlined-select-homeworld"
+        label="Status"
         select
-        value={species}
-        onChange={handleChange}
+        value={status}
+        onChange={handleStatus}
       >
-        {currencies.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            {option.label}
+        {statusMenu.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
           </MenuItem>
         ))}
       </TextField>
-      <Grid container>
-        <Button>button</Button>
-        <Button>button</Button>
+      <Grid container flexDirection="row-reverse">
+        <Button
+          variant="contained"
+          color="error"
+          sx={{ textTransform: 'none', marginLeft: '3ch' }}
+        >
+          <RemoveIcon sx={{ marginRight: '1ch' }} />
+          Remove characters
+        </Button>
+        <Button variant="contained" sx={{ textTransform: 'none' }}>
+          <RemoveIcon
+            sx={{
+              borderRadius: '50%',
+              background: '#d32f2f',
+              marginRight: '1ch'
+            }}
+          />
+          Deactivate characters
+        </Button>
       </Grid>
     </Toolbar>
   );
-};
-
-EnhancedTableToolbar.propTypes = {
-  numSelected: PropTypes.number.isRequired
 };
 
 const EnhancedTable = () => {
@@ -306,33 +353,69 @@ const EnhancedTable = () => {
   const [orderBy, setOrderBy] = React.useState('born');
   const [selected, setSelected] = React.useState([]);
   const [page, setPage] = React.useState(1);
-  const [status] = React.useState('active');
   const [rowsPerPage] = React.useState(5);
   const [characters, setCharacters] = React.useState([]);
   React.useEffect(() => {
     if (characters.length === 0) {
-      Axios.get(`${api.url}/${api.people}`).then(() => {
-        (async () => {
-          let nextPage = `${api.url}/${api.people}`;
+      (async () => {
+        let nextPage = `${api.url}/${api.people}`;
 
-          let people = [];
+        let people = [];
 
-          while (nextPage) {
-            // eslint-disable-next-line no-await-in-loop
-            const result = await Axios.get(nextPage);
+        while (nextPage) {
+          const result = await Axios.get(nextPage);
 
-            // eslint-disable-next-line no-await-in-loop
-            const { next, results } = await result.data;
+          const { next, results } = await result.data;
 
-            nextPage = next;
+          nextPage = next;
 
-            people = [...people, ...results];
+          people = [...people, ...results];
+        }
+
+        for (const character of people) {
+          const result = await Axios.get(character.homeworld);
+
+          const planet = result.data.name;
+          character.homeworld = planet;
+        }
+
+        for (const character of people) {
+          if (character.species.length) {
+            const result = await Axios.get(character.species);
+            const specie = result.data.name;
+            character.species = specie;
+          } else {
+            character.species = 'Unspecified';
           }
-          setCharacters(people);
-        })();
-      });
+        }
+
+        for (const character of people) {
+          let vehiclesAndStarships = [];
+          for (const vehicle of character.vehicles) {
+            const result = await Axios.get(vehicle);
+            const vehicleName = result.data.name;
+            vehiclesAndStarships = [...vehiclesAndStarships, vehicleName];
+          }
+          for (const starship of character.starships) {
+            const result = await Axios.get(starship);
+            const starshipName = result.data.name;
+            vehiclesAndStarships = [...vehiclesAndStarships, starshipName];
+          }
+          character.vehiclesAndStarships = vehiclesAndStarships;
+          character.status = 'active';
+        }
+
+        setCharacters(people);
+      })();
     }
   });
+
+  const showRandom = (vehiclesAndStarships) => {
+    const shuffled = vehiclesAndStarships.sort(() => 0.5 - Math.random());
+    const twoRandomTransports = shuffled.slice(0, 2);
+
+    return twoRandomTransports;
+  };
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -380,7 +463,7 @@ const EnhancedTable = () => {
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - characters.length) : 0;
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%', marginTop: '15vh' }}>
       <Typography variant="h5">Characters</Typography>
       <EnhancedTableToolbar />
       <Paper sx={{ width: '100%', mb: 2 }}>
@@ -432,17 +515,38 @@ const EnhancedTable = () => {
                         scope="row"
                         padding="none"
                       >
-                        {charakter.name}
+                        <Grid container wrap="nowrap" direction="column">
+                          <Grid item>{charakter.name}</Grid>
+                          <Grid item xs zeroMinWidth sx={{ fontSize: '10px' }}>
+                            <span>{charakter.species}</span>
+                          </Grid>
+                        </Grid>
                       </TableCell>
                       <TableCell align="right">
                         {charakter.birth_year}
                       </TableCell>
                       <TableCell align="right">{charakter.homeworld}</TableCell>
-                      <TableCell align="right">{charakter.vehicles}</TableCell>
-                      <TableCell align="left">
-                        <DoneIcon fontSize="small" /> {status}
+                      <TableCell align="right">
+                        <Grid container wrap="nowrap" direction="column">
+                          <Grid item>
+                            {showRandom(charakter.vehiclesAndStarships)[0]}
+                          </Grid>
+                          <Grid item xs zeroMinWidth>
+                            {showRandom(charakter.vehiclesAndStarships)[1]}
+                          </Grid>
+                        </Grid>
                       </TableCell>
-                      <TableCell align="left">
+                      <TableCell align="right">
+                        <DoneIcon
+                          sx={{
+                            borderRadius: '50%',
+                            background: '#1b5e20',
+                            marginRight: '1ch'
+                          }}
+                        />
+                        {charakter.status}
+                      </TableCell>
+                      <TableCell align="right">
                         <IconButton
                           color="primary"
                           aria-label="upload picture"
